@@ -60,6 +60,8 @@ const EVAL = (ast, env) => {
       for (let index = 0; index < list.length; index += 2) {
         innerEnv.set(list[index], EVAL(list[index + 1], innerEnv));
       }
+
+      if
       return EVAL(ast.value[2], innerEnv);
   }
 
