@@ -12,6 +12,47 @@ const rl = readline.createInterface({
 
 const env = globalEnv;
 
+const handleDef = (env, ast) => {
+  env.set(ast.value[1], EVAL(ast.value[2], env));
+  return env.get(ast.value[1]);
+};
+
+const handleLet = (env, ast) => {
+  const innerEnv = new Env(env);
+  const list = ast.value[1].value;
+  for (let index = 0; index < list.length; index += 2) {
+    innerEnv.set(list[index], EVAL(list[index + 1], innerEnv));
+  }
+  return EVAL(ast.value[2], innerEnv);
+};
+
+const handleDo = (ast, env) => {
+  const restList = ast.value.slice(1);
+  let returnValue = '';
+  for (let index = 0; index < restList.length; index += 1) {
+    returnValue = EVAL(restList[index], env);
+  }
+  return returnValue;
+};
+
+const handleIf = (ast, env) => {
+  const predicate = ast.value[1];
+  const ifTrueDo = ast.value[2];
+  const ifFalseDo = ast.value[3];
+
+  const boolean = EVAL(predicate, env);
+  return (!boolean || boolean instanceof MalNil) ? EVAL(ifFalseDo, env) : EVAL(ifTrueDo, env);
+};
+
+const handleFn = (env, ast) => {
+  return (...arguments) => {
+    const fn_env = new Env(env, ast.value[1].value, arguments);
+    fn_env.initialize();
+    const doAst = new MalList([new MalSymbol('do'), ...ast.value.slice(2)]);
+    return EVAL(doAst, fn_env);
+  };
+};
+
 const eval_ast = (ast, env) => {
   if (ast instanceof MalSymbol) {
     return env.get(ast);
@@ -82,44 +123,3 @@ const repl = () =>
   });
 
 repl();
-
-function handleDef(env, ast) {
-  env.set(ast.value[1], EVAL(ast.value[2], env));
-  return env.get(ast.value[1]);
-}
-
-function handleLet(env, ast) {
-  const innerEnv = new Env(env);
-  const list = ast.value[1].value;
-  for (let index = 0; index < list.length; index += 2) {
-    innerEnv.set(list[index], EVAL(list[index + 1], innerEnv));
-  }
-  return EVAL(ast.value[2], innerEnv);
-}
-
-function handleDo(ast, env) {
-  const restList = ast.value.slice(1);
-  let returnValue = '';
-  for (let index = 0; index < restList.length; index += 1) {
-    returnValue = EVAL(restList[index], env);
-  }
-  return returnValue;
-}
-
-function handleIf(ast, env) {
-  const predicate = ast.value[1];
-  const ifTrueDo = ast.value[2];
-  const ifFalseDo = ast.value[3];
-
-  const boolean = EVAL(predicate, env);
-  return (!boolean || boolean instanceof MalNil) ? EVAL(ifFalseDo, env) : EVAL(ifTrueDo, env);
-}
-
-function handleFn(env, ast) {
-  return (...arguments) => {
-    const fn_env = new Env(env, ast.value[1].value, arguments);
-    fn_env.initialize();
-    const doAst = new MalList([new MalSymbol('do'), ...ast.value.slice(2)]);
-    return EVAL(doAst, fn_env);
-  };
-}
