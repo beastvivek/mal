@@ -17,6 +17,13 @@ class Reader {
   }
 }
 
+const prependSymbol = (reader, symbol) => {
+  reader.next();
+  const prepend_symbol = new MalSymbol(symbol);
+  const newAst = read_form(reader);
+  return new MalList([prepend_symbol, newAst]);
+}
+
 const tokenize = (str) => {
   const re = /[\s,]*(~@|[\[\]{}()'`~^@]|"(?:\\.|[^\\"])*"?|;.*|[^\s\[\]{}('"`,;)]*)/g;
 
@@ -25,7 +32,6 @@ const tokenize = (str) => {
 
 const read_atom = reader => {
   const token = reader.next();
-  
   if (token.match(/^-?[0-9]+$/)) {
     return parseInt(token);
   }
@@ -101,6 +107,14 @@ const read_form = reader => {
     case '"':
       reader.next();
       return read_string(reader);
+    case '\'':
+      return prependSymbol(reader, 'quote');
+    case '`':
+      return prependSymbol(reader, 'quasiquote');
+    case '~':
+      return prependSymbol(reader, 'unquote');
+    case '~@':
+      return prependSymbol(reader, 'splice-unquote');
     default:
       return read_atom(reader);
   }
