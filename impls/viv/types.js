@@ -77,7 +77,13 @@ class MalString extends MalValue {
   }
 }
 
-class MalList extends MalValue {
+class MalSequence extends MalValue {
+  constructor(value) {
+    super(value);
+  }
+}
+
+class MalList extends MalSequence {
   constructor(value) {
     super(value);
   }
@@ -95,7 +101,7 @@ class MalList extends MalValue {
   }
 }
 
-class MalVector extends MalValue {
+class MalVector extends MalSequence {
   constructor(value) {
     super(value);
   }
@@ -186,4 +192,4 @@ class MalAtom extends MalValue {
   }
 }
 
-module.exports = { MalList, MalAtom , MalSymbol  , MalVector , MalValue, MalMap , MalNil , MalKeyword, MalString, MalFunction, deepEqual};
+module.exports = { MalSequence, MalList, MalAtom , MalSymbol  , MalVector , MalValue, MalMap , MalNil , MalKeyword, MalString, MalFunction, deepEqual};

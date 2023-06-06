@@ -1,7 +1,7 @@
 const readline = require('readline');
 const { readStr } = require('./reader.js');
 const { prStr } = require('./printer.js');
-const { MalSymbol, MalList, MalMap, MalVector, MalNil, MalFunction } = require('./types.js');
+const { MalSymbol, MalList, MalMap, MalVector, MalNil, MalFunction, MalSequence } = require('./types.js');
 const { Env } = require('./env.js');
 const { coreMethod } = require('./core.js');
 
@@ -55,38 +55,43 @@ const handleFn = (ast, env) => {
   return new MalFunction(doAst, ast.value[1].value, env, fn);
 };
 
+const structureAst = (ast, env) => {
+  let result = new MalList([]);
+  for (let index = ast.value.length - 1; index >= 0; index--) {
+    const element = ast.value[index];
+    if (element instanceof MalSequence &&
+      element.value.length > 0 &&
+      element.value[0].value === "splice-unquote") {
+      result = new MalList([
+        new MalSymbol("concat"),
+        element.value[1],
+        result,
+      ]);
+    } else {
+      result = new MalList([
+        new MalSymbol("cons"),
+        quasiQuote(element, env),
+        result,
+      ]);
+    }
+  }
+
+  return result;
+};
+
 const quasiQuote = (ast, env) => {
   if (
-    ast instanceof MalList &&
+    ast instanceof MalSequence &&
     ast.value.length > 0 &&
     ast.value[0].value === "unquote"
   ) {
     return ast.value[1];
   }
 
-  if (ast instanceof MalList) {
-    let result = new MalList([]);
-    for (let index = ast.value.length - 1; index >= 0; index--) {
-      const element = ast.value[index];
-      if (
-        element instanceof MalList &&
-        element.value.length > 0 &&
-        element.value[0].value === "splice-unquote"
-      ) {
-        result = new MalList([
-          new MalSymbol("concat"),
-          element.value[1],
-          result,
-        ]);
-      } else {
-        result = new MalList([
-          new MalSymbol("cons"),
-          quasiQuote(element,env),
-          result,
-        ]);
-      }
-    }
-    return result;
+  if (ast instanceof MalSequence) {
+    const result = structureAst(ast, env);
+    if (ast instanceof MalList) return result;
+    return new MalList([new MalSymbol('vec'), result]);
   }
 
   if (ast instanceof MalSymbol || ast instanceof MalMap) {
