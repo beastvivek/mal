@@ -120,10 +120,10 @@ const read_form = reader => {
   }
 };
 
-const read_str = (str) => {
+const readStr = (str) => {
   const tokens = tokenize(str);
   const reader = new Reader(tokens);
   return read_form(reader);
 };
 
-module.exports = { read_str };
+module.exports = { readStr };

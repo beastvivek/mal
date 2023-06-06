@@ -1,9 +1,9 @@
 const readline = require('readline');
-const { read_str } = require('./reader.js');
-const { pr_str } = require('./printer.js');
+const { readStr } = require('./reader.js');
+const { prStr } = require('./printer.js');
 const { MalSymbol, MalList, MalMap, MalVector, MalNil, MalFunction } = require('./types.js');
 const { Env } = require('./env.js');
-const { globalEnv } = require('./core.js');
+const { coreMethod } = require('./core.js');
 
 const rl = readline.createInterface({
   input: process.stdin,
@@ -118,7 +118,7 @@ const eval_ast = (ast, env) => {
   return ast;
 };
 
-const READ = str => read_str(str);
+const READ = str => readStr(str);
 
 const EVAL = (ast, env) => {
   while (true) { 
@@ -173,16 +173,24 @@ const EVAL = (ast, env) => {
   }
 };
 
-const PRINT = malValue => pr_str(malValue);
+const PRINT = malValue => prStr(malValue);
 
 const rep = str => PRINT(EVAL(READ(str), env));
 
-const env = globalEnv;
-env.set(new MalSymbol("not"), (arg) =>
-  rep(`((fn* [x] (if x false true)) ${get_value(arg)})`)
-);
-env.set(new MalSymbol("eval"), (ast) => EVAL(ast, env));
-rep('(def! load-file (fn* (f) (eval (read-string (str "(do " (slurp f) "\nnil)")))))');
+const env = new Env();
+
+const createReplEnv = () => {
+  coreMethod['not'] = (arg) =>
+    rep(`((fn* [x] (if x false true)) ${getValue(arg)})`);
+  rep('(def! load-file (fn* (f) (eval (read-string (str "(do " (slurp f) "\nnil)")))))');
+  coreMethod['eval'] = (ast) => {
+    return eval(ast, env);
+  };
+  Object.keys(coreMethod).forEach(key =>
+    env.set(new MalSymbol(key), coreMethod[key]));
+}
+
+createReplEnv();
 
 const repl = () =>
   rl.question('user> ', line => {
